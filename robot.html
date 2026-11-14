@@ -301,7 +301,7 @@ status.textContent="Connecting to Pravee... 💜";
 $("subtitleText").textContent="Getting a secure connection token...";
 let response;
 try{
-response=await fetch("http://127.0.0.1:8000/token",{method:"GET",headers:{"Accept":"application/json"},cache:"no-store"});
+response=await fetch("https://pravee-ai-voice-assistant.onrender.com/token",{method:"GET",headers:{"Accept":"application/json"},cache:"no-store"});
 }catch(e){throw new Error("Cannot reach token server at port 8000. Start token_server.py first.")}
 const responseText=await response.text();
 let credentials;
