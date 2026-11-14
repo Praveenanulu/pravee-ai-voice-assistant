@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pravee 2.0 - Magical AI Companion</title>
+<style>
+:root{--bg:#100b20;--panel:#1c1430;--primary:#c084fc;--secondary:#f0abfc;--accent:#67e8f9;--text:#f5edff;--muted:#b9a9d1;--glow:rgba(192,132,252,.45)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 50% 15%,#352052,var(--bg) 65%);overflow-x:hidden;transition:background .5s}
+button{font:inherit;cursor:pointer}
+.topbar{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;padding:16px;position:relative;z-index:5}
+.topBtn,.actionBtn,.panelClose{border:1px solid #ffffff26;border-radius:14px;padding:10px 15px;color:var(--text);background:#ffffff12;backdrop-filter:blur(12px);transition:.25s}
+.topBtn:hover,.actionBtn:hover,.panelClose:hover{transform:translateY(-2px);background:var(--glow);box-shadow:0 0 22px var(--glow)}
+.brand{text-align:center;margin:12px 0 0}
+.brand h1{margin:0;font-size:clamp(2rem,5vw,3.4rem);background:linear-gradient(90deg,var(--primary),var(--secondary),var(--accent));color:transparent;background-clip:text}
+.brand p,.panel p{color:var(--muted)}
+#robotStage{width:min(440px,94vw);height:390px;margin:10px auto;display:flex;align-items:center;justify-content:center;position:relative;filter:drop-shadow(0 0 28px var(--glow))}
+#robot{width:100%;height:100%;overflow:visible}
+.panel{display:none;position:fixed;z-index:20;top:50%;left:50%;transform:translate(-50%,-50%);width:min(600px,94vw);max-height:82vh;overflow:auto;padding:24px;border-radius:24px;background:#1b122ff7;border:1px solid #ffffff2b;box-shadow:0 20px 80px #0009;backdrop-filter:blur(18px)}
+.panel.active{display:block;animation:panelIn .25s ease}
+@keyframes panelIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.panel h2{text-align:center;color:var(--secondary)}
+.panel p{text-align:center}
+.panelClose{display:block;margin:20px auto 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:18px}
+.choice,.avatarChoice{padding:14px;border-radius:16px;text-align:center;border:1px solid #ffffff20;background:#ffffff09;color:var(--text);transition:.2s}
+.choice:hover,.avatarChoice:hover,.choice.selected,.avatarChoice.selected{border-color:var(--primary);background:var(--glow);box-shadow:0 0 18px var(--glow);transform:translateY(-2px)}
+.avatarPreview{width:100%;height:115px;display:flex;align-items:center;justify-content:center}
+.avatarPreview svg{height:110px;width:100px}
+.actionArea{width:min(650px,94vw);margin:12px auto 25px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.status{text-align:center;color:var(--muted);min-height:25px}
+.chatArea{width:min(650px,94vw);margin:12px auto;display:flex;gap:8px}
+.chatArea input{flex:1;min-width:0;padding:13px 15px;border-radius:14px;border:1px solid #ffffff25;background:#ffffff0d;color:white}
+.chatArea button{padding:12px 17px;border:0;border-radius:14px;background:var(--accent);color:#1a1028;font-weight:bold}
+.stats{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px}
+.stat{background:#ffffff0b;border:1px solid #ffffff15;border-radius:14px;padding:10px 15px;color:var(--muted)}
+.particle{position:fixed;pointer-events:none;z-index:0;animation:rise linear infinite;opacity:.6}
+@keyframes rise{from{transform:translateY(100vh) rotate(0);opacity:0}15%{opacity:.6}to{transform:translateY(-15vh) rotate(360deg);opacity:0}}
+.float{animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.dance{animation:dance .55s ease-in-out infinite alternate}
+@keyframes dance{to{transform:rotate(8deg) translateY(-8px)}}
+.wave{animation:wave .7s ease-in-out infinite alternate;transform-origin:80% 70%}
+@keyframes wave{to{transform:rotate(-18deg)}}
+.sleep{animation:sleep 2s ease-in-out infinite}
+@keyframes sleep{50%{transform:translateY(8px)}}
+.celebrate{animation:celebrate .5s ease-in-out infinite alternate}
+@keyframes celebrate{to{transform:translateY(-15px) rotate(5deg)}}
+.laugh{animation:laugh .18s ease-in-out infinite alternate}
+@keyframes laugh{to{transform:rotate(3deg) scale(1.02)}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#281b42;color:white;padding:12px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:.3s;z-index:50;border:1px solid #ffffff25}
+#toast.show{opacity:1}
+.badgeItem{padding:12px;border-radius:14px;background:#ffffff0b;border:1px solid #ffffff15}
+.badgeItem.unlocked{border-color:#f0abfc;background:#f0abfc15}
+#gameOutput{text-align:center;min-height:45px;color:var(--accent)}
+#subtitleBox{width:min(650px,94vw);min-height:75px;margin:12px auto 18px;padding:15px 18px;border-radius:16px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.4);text-align:center}
+.subtitleHeading{color:#f0abfc;font-size:12px;font-weight:bold;letter-spacing:2px;margin-bottom:9px}
+#subtitleText{color:#f5edff;font-size:16px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap;min-height:24px}
+button:disabled{opacity:.6;cursor:wait}
+@media(max-width:480px){#robotStage{height:330px}.topbar{gap:7px}.topBtn{padding:9px 11px;font-size:13px}}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+<header class="brand"><h1>✨ Pravee 2.0 ✨</h1><p>Your Magical AI Companion 💜</p></header>
+
+<nav class="topbar">
+<button class="topBtn" onclick="togglePanel('themePanel')">🎨 Themes</button>
+<button class="topBtn" onclick="togglePanel('dressPanel')">👗 Dress-up</button>
+<button class="topBtn" onclick="togglePanel('personalityPanel')">💖 Personality</button>
+<button class="topBtn" onclick="togglePanel('avatarPanel')">🧚 Avatar Studio</button>
+<button class="topBtn" onclick="togglePanel('gamesPanel')">🎮 Games</button>
+<button class="topBtn" onclick="togglePanel('achievementPanel')">🏆 Achievements</button>
+</nav>
+
+<main>
+<div id="robotStage">
+<svg id="robot" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#581c87"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffe0cf"/><stop offset="100%" stop-color="#f4a9a4"/></linearGradient>
+<linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="100%" stop-color="#9333ea"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g id="all" class="float">
+<path d="M200 62 Q200 35 200 25" stroke="#d8b4fe" stroke-width="7" fill="none" stroke-linecap="round"/>
+<circle cx="200" cy="20" r="9" fill="#f0abfc" filter="url(#glow)"/>
+<path d="M105 300 Q80 330 92 365 L308 365 Q320 330 295 300" fill="url(#body)" stroke="#f0abfc" stroke-width="4"/>
+<rect x="105" y="110" width="190" height="185" rx="82" fill="url(#hair)"/>
+<ellipse id="face" cx="200" cy="190" rx="75" ry="88" fill="url(#skin)"/>
+<circle cx="145" cy="215" r="13" fill="#fb7185" opacity=".35"/>
+<circle cx="255" cy="215" r="13" fill="#fb7185" opacity=".35"/>
+<g id="ey" fill="#312e81"><ellipse id="e1" cx="170" cy="182" rx="9" ry="13"/><ellipse id="e2" cx="230" cy="182" rx="9" ry="13"/></g>
+<path d="M155 163 Q170 150 184 163" stroke="#54245f" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M216 163 Q230 150 245 163" stroke="#54245f" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path id="mo" d="M184 225 Q200 244 216 225" stroke="#a33b67" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M125 140 Q140 75 205 95 Q275 75 278 150 Q255 115 225 120 Q175 90 125 140" fill="url(#hair)"/>
+<path d="M126 145 Q105 210 132 260" stroke="#581c87" stroke-width="20" fill="none" stroke-linecap="round"/>
+<path d="M274 145 Q295 210 268 260" stroke="#581c87" stroke-width="20" fill="none" stroke-linecap="round"/>
+</g>
+</svg>
+<div id="accessory"></div>
+</div>
+
+<div class="status" id="moodText">Pravee is feeling magical today! ✨</div>
+<div class="stats">
+<div class="stat">💜 Mood: <span id="moodValue">Happy</span></div>
+<div class="stat">🏆 Badges: <span id="badgeCount">0</span></div>
+<div class="stat">🎭 Avatar: <span id="avatarName">Anime Girl</span></div>
+</div>
+
+<div class="actionArea">
+<button class="actionBtn" onclick="robotAction('wave')">👋 Wave</button>
+<button class="actionBtn" onclick="robotAction('dance')">💃 Dance</button>
+<button class="actionBtn" onclick="robotAction('wink')">😉 Wink</button>
+<button class="actionBtn" onclick="robotAction('laugh')">😂 Laugh</button>
+<button class="actionBtn" onclick="robotAction('celebrate')">🎉 Celebrate</button>
+<button class="actionBtn" onclick="robotAction('sleep')">😴 Sleep</button>
+<button class="actionBtn" onclick="takeSnapshot()">📸 Snapshot</button>
+</div>
+
+<div class="chatArea">
+<input id="chatInput" placeholder="Say something to Pravee..."/>
+<button onclick="sendMessage()">Send</button>
+</div>
+
+<div id="subtitleBox" aria-live="polite">
+<div class="subtitleHeading">💜 PRAVEE SAYS</div>
+<div id="subtitleText">Your conversation will appear here...</div>
+</div>
+
+<div class="status" id="connectionStatus">Not connected to voice assistant</div>
+<div class="actionArea">
+<button class="actionBtn" id="connectBtn" type="button" onclick="connectPravee()">🎙️ Connect Voice</button>
+<button class="actionBtn" type="button" onclick="disconnectPravee()">Disconnect</button>
+</div>
+</main>
+
+<div class="panel" id="avatarPanel"><h2>🧚 Pravee's Avatar Studio</h2><p>Choose your favourite Pravee character.</p><div class="grid" id="avatarGrid"></div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div class="panel" id="themePanel"><h2>🎨 Theme Studio</h2><p>Choose a magical colour theme.</p><div class="grid" id="themeGrid"></div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div class="panel" id="dressPanel"><h2>👗 Dress-up Studio</h2><p>Give Pravee a cute accessory!</p><div class="grid" id="dressGrid"></div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div class="panel" id="personalityPanel"><h2>💖 Personality Studio</h2><p>Choose Pravee's personality.</p><div class="grid" id="personalityGrid"></div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div class="panel" id="gamesPanel"><h2>🎮 Mini Games</h2><div class="grid">
+<button class="choice" onclick="playRPS('Rock')">🪨 Rock</button><button class="choice" onclick="playRPS('Paper')">📄 Paper</button><button class="choice" onclick="playRPS('Scissors')">✂️ Scissors</button><button class="choice" onclick="startGuess()">🔢 Guess Number</button><button class="choice" onclick="startQuiz()">🧠 Quick Quiz</button>
+</div><div id="gameOutput">Choose a game to play!</div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div class="panel" id="achievementPanel"><h2>🏆 Pravee's Achievements</h2><div class="grid" id="achievementGrid"></div><button class="panelClose" onclick="closePanels()">Done ✓</button></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let room=null,bridge=null,currentAudio=null,audioContext=null,audioAnalyser=null,audioData=null,audioSource=null;
+let speaking=false,mouthOpen=0,state="idle",unlocked=[];
+let guessAnswer=0,quizIndex=0;
+const themes=[
+{name:"Purple Dream",id:"anime",bg:"#100b20",primary:"#c084fc",secondary:"#f0abfc",accent:"#67e8f9"},
+{name:"Ocean Blue",id:"ocean",bg:"#071b2c",primary:"#38bdf8",secondary:"#7dd3fc",accent:"#5eead4"},
+{name:"Rose Pink",id:"rose",bg:"#2b1021",primary:"#fb7185",secondary:"#f9a8d4",accent:"#fda4af"},
+{name:"Mint Magic",id:"mint",bg:"#08251d",primary:"#34d399",secondary:"#a7f3d0",accent:"#67e8f9"},
+{name:"Golden Glow",id:"gold",bg:"#251b08",primary:"#fbbf24",secondary:"#fde68a",accent:"#fb923c"},
+{name:"Galaxy",id:"galaxy",bg:"#130c2d",primary:"#818cf8",secondary:"#c4b5fd",accent:"#f0abfc"},
+{name:"Dark Mode",id:"dark",bg:"#09090b",primary:"#a1a1aa",secondary:"#e4e4e7",accent:"#67e8f9"},
+{name:"Lavender",id:"lavender",bg:"#21132d",primary:"#c4b5fd",secondary:"#e9d5ff",accent:"#f0abfc"},
+{name:"Sunset",id:"sunset",bg:"#2b1010",primary:"#fb923c",secondary:"#fda4af",accent:"#facc15"},
+{name:"Ice Blue",id:"ice",bg:"#0b1d2b",primary:"#7dd3fc",secondary:"#bae6fd",accent:"#e0f2fe"},
+{name:"Forest",id:"forest",bg:"#102017",primary:"#86efac",secondary:"#bbf7d0",accent:"#bef264"},
+{name:"Candy",id:"candy",bg:"#2a102b",primary:"#f0abfc",secondary:"#f9a8d4",accent:"#a5f3fc"}
+];
+const dresses=[["None",""],["Crown","👑"],["Flower","🌸"],["Bow","🎀"],["Glasses","👓"],["Halo","😇"],["Star","⭐"],["Heart","💖"],["Headphones","🎧"]];
+const personalities=[["Cute","🥰"],["Funny","😂"],["Friendly","💜"],["Professional","🤓"],["Cheerful","✨"]];
+const avatars=[["Anime Girl","anime"],["Princess","princess"],["Robot","robot"],["Fairy","fairy"],["Cute Friend","cute"]];
+const badges=[["themes","🎨 Theme Explorer"],["games","🎮 Game Player"],["chat","💬 Conversation Starter"],["snapshot","📸 Memory Maker"],["dance","💃 Dance Star"]];
+let currentDress="",currentPersonality="Cute";
+
+function toast(message){
+const t=$("toast");t.textContent=message;t.classList.add("show");
+clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove("show"),2800);
+}
+function togglePanel(id){$(id).classList.toggle("active")}
+function closePanels(){document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"))}
+function unlock(id){
+if(!unlocked.includes(id)){unlocked.push(id);localStorage.setItem("praveeBadges",JSON.stringify(unlocked));updateAchievements();toast("Achievement unlocked! 🏆")}
+}
+function updateAchievements(){
+$("badgeCount").textContent=unlocked.length;
+$("achievementGrid").innerHTML=badges.map(([id,label])=>`<div class="badgeItem ${unlocked.includes(id)?"unlocked":""}">${label} ${unlocked.includes(id)?"✓":"🔒"}</div>`).join("");
+}
+function buildThemes(){
+$("themeGrid").innerHTML=themes.map(t=>`<button class="choice" data-theme="${t.id}">${t.name}</button>`).join("");
+$("themeGrid").querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>applyTheme(b.dataset.theme));
+}
+function applyTheme(id,save=true){
+const t=themes.find(x=>x.id===id)||themes[0];
+document.documentElement.style.setProperty("--bg",t.bg);
+document.documentElement.style.setProperty("--primary",t.primary);
+document.documentElement.style.setProperty("--secondary",t.secondary);
+document.documentElement.style.setProperty("--accent",t.accent);
+document.documentElement.style.setProperty("--glow",t.primary+"70");
+if(save)localStorage.setItem("praveeTheme",id);
+unlock("themes");
+}
+function buildDress(){
+$("dressGrid").innerHTML=dresses.map(([name,emoji])=>`<button class="choice">${emoji||"❌"} ${name}</button>`).join("");
+[...$("dressGrid").children].forEach((b,i)=>b.onclick=()=>{
+currentDress=dresses[i][1];$("accessory").textContent=currentDress;
+$("accessory").style.position="absolute";$("accessory").style.top="65px";$("accessory").style.left="50%";$("accessory").style.transform="translateX(-50%)";$("accessory").style.fontSize="42px";
+});
+}
+function buildPersonalities(){
+$("personalityGrid").innerHTML=personalities.map(([name,emoji])=>`<button class="choice">${emoji} ${name}</button>`).join("");
+[...$("personalityGrid").children].forEach((b,i)=>b.onclick=()=>{
+currentPersonality=personalities[i][0];$("moodValue").textContent=currentPersonality;toast("Personality changed!");
+});
+}
+function buildAvatars(){
+$("avatarGrid").innerHTML=avatars.map(([name,id])=>`<button class="avatarChoice" data-avatar="${id}"><div class="avatarPreview">🤖</div>${name}</button>`).join("");
+$("avatarGrid").querySelectorAll("[data-avatar]").forEach(b=>b.onclick=()=>renderAvatar(b.dataset.avatar));
+}
+function renderAvatar(id,save=true){
+const a=avatars.find(x=>x[1]===id)||avatars[0];
+$("avatarName").textContent=a[0];
+if(save)localStorage.setItem("praveeAvatar",id);
+$("face").setAttribute("fill",id==="robot"?"#c4b5fd":"url(#skin)");
+toast(a[0]+" selected!");
+}
+function robotAction(action){
+const all=$("all");all.className.baseVal=action==="wink"?"float":"float "+action;
+if(action==="wink"){$("e1").setAttribute("ry",2);setTimeout(()=>$("e1").setAttribute("ry",13),700)}
+if(action==="wave")$("moodText").textContent="Pravee says hello! 👋";
+if(action==="dance"){$("moodText").textContent="Let's dance! 💃";unlock("dance")}
+if(action==="laugh")$("moodText").textContent="Hahaha! 😂";
+if(action==="sleep")$("moodText").textContent="Zzz... Sweet dreams! 😴";
+if(action==="celebrate")$("moodText").textContent="Yay! Let's celebrate! 🎉";
+setTimeout(()=>all.className.baseVal="float",1800);
+}
+function takeSnapshot(){
+const svg=$("robot"),data=new XMLSerializer().serializeToString(svg);
+const blob=new Blob([data],{type:"image/svg+xml"});
+const url=URL.createObjectURL(blob);const a=document.createElement("a");
+a.href=url;a.download="Pravee-Snapshot.svg";a.click();URL.revokeObjectURL(url);unlock("snapshot");
+}
+function playRPS(choice){
+const choices=["Rock","Paper","Scissors"],computer=choices[Math.floor(Math.random()*3)];
+let result=choice===computer?"It's a tie!":((choice==="Rock"&&computer==="Scissors")||(choice==="Paper"&&computer==="Rock")||(choice==="Scissors"&&computer==="Paper"))?"You win! 🎉":"Pravee wins! 💜";
+$("gameOutput").textContent=`You: ${choice} | Pravee: ${computer} — ${result}`;unlock("games");
+}
+function startGuess(){
+guessAnswer=Math.floor(Math.random()*10)+1;
+$("gameOutput").innerHTML='Guess a number between 1 and 10: <input id="guessInput" type="number" min="1" max="10"><button onclick="checkGuess()">Check</button>';
+}
+function checkGuess(){
+const v=Number($("guessInput").value);
+$("gameOutput").textContent=v===guessAnswer?"Correct! You got it! 🎉":v<guessAnswer?"Try a higher number!":"Try a lower number!";
+if(v===guessAnswer)unlock("games");
+}
+function startQuiz(){
+const questions=[["Which language is popular for AI?","Python"],["What does AI stand for?","Artificial Intelligence"],["Which company created Gemini?","Google"]];
+const q=questions[quizIndex%questions.length];quizIndex++;
+$("gameOutput").innerHTML=`${q[0]} <input id="quizInput" placeholder="Your answer"><button onclick="checkQuiz('${q[1]}')">Submit</button>`;
+}
+function checkQuiz(answer){
+if($("quizInput").value.trim().toLowerCase()===answer.toLowerCase()){ $("gameOutput").textContent="Correct answer! 🎉";unlock("games")}
+else $("gameOutput").textContent="Not quite! Correct answer: "+answer;
+}
+function sendMessage(){
+const message=$("chatInput").value.trim();if(!message)return;
+if(bridge&&bridge.readyState===WebSocket.OPEN){
+bridge.send(JSON.stringify({type:"text",message}));
+$("subtitleText").textContent="You: "+message;
+$("chatInput").value="";unlock("chat");toast("Message sent to Pravee 💜");
+}else toast("Connect the voice assistant first.");
+}
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage()});
+function connectBridge(){
+if(bridge&&(bridge.readyState===WebSocket.OPEN||bridge.readyState===WebSocket.CONNECTING))return;
+try{
+bridge=new WebSocket("ws://localhost:8765");
+bridge.onopen=()=>console.log("Pravee bridge connected");
+bridge.onmessage=event=>{
+try{
+const data=JSON.parse(event.data);
+if(data.type==="text"&&data.text){const role=String(data.role||"").toLowerCase();if(role.includes("assistant")||role.includes("agent"))$("subtitleText").textContent=data.text}
+if(data.message)$("moodText").textContent=data.message;
+if(data.type==="speaking")speaking=!!data.value;
+}catch(e){console.log("Bridge message:",event.data)}
+};
+bridge.onclose=()=>console.log("Pravee bridge disconnected");
+bridge.onerror=()=>console.log("Bridge unavailable");
+}catch(e){console.log(e)}
+}
+connectBridge();
+
+async function connectPravee(){
+const button=$("connectBtn"),status=$("connectionStatus");
+if(room){await disconnectPravee();return}
+if(!window.LivekitClient){status.textContent="LiveKit library did not load. Check internet and refresh.";toast("LiveKit client library not loaded.");return}
+try{
+button.disabled=true;button.textContent="Connecting...";
+status.textContent="Connecting to Pravee... 💜";
+$("subtitleText").textContent="Getting a secure connection token...";
+let response;
+try{
+response=await fetch("http://127.0.0.1:8000/token",{method:"GET",headers:{"Accept":"application/json"},cache:"no-store"});
+}catch(e){throw new Error("Cannot reach token server at port 8000. Start token_server.py first.")}
+const responseText=await response.text();
+let credentials;
+try{credentials=JSON.parse(responseText)}catch(e){throw new Error("Token server returned invalid JSON. Check port 8000.")}
+if(!response.ok)throw new Error("Token server HTTP "+response.status+": "+(credentials.error||credentials.message||response.statusText));
+if(!credentials.url||!credentials.token)throw new Error(credentials.error||"Token response must contain url and token.");
+
+room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});
+room.on(LivekitClient.RoomEvent.Connected,()=>{
+status.textContent="Connected to Pravee 💜";$("subtitleText").textContent="Connected! Say hello to Pravee 🎙️";
+});
+room.on(LivekitClient.RoomEvent.Disconnected,()=>{
+status.textContent="Disconnected from Pravee";speaking=false;button.textContent="🎙️ Connect Voice";
+});
+room.on(LivekitClient.RoomEvent.TrackSubscribed,async track=>{
+if(track.kind!==LivekitClient.Track.Kind.Audio)return;
+try{
+const audio=track.attach();audio.autoplay=true;audio.playsInline=true;audio.controls=false;audio.volume=1;
+audio.style.position="fixed";audio.style.width="1px";audio.style.height="1px";audio.style.opacity="0";audio.style.pointerEvents="none";
+document.body.appendChild(audio);currentAudio=audio;await audio.play();
+if(!audioContext)audioContext=new(window.AudioContext||window.webkitAudioContext)();
+if(audioContext.state==="suspended")await audioContext.resume();
+audioAnalyser=audioContext.createAnalyser();audioAnalyser.fftSize=512;audioAnalyser.smoothingTimeConstant=.45;
+audioData=new Uint8Array(audioAnalyser.fftSize);
+audioSource=audioContext.createMediaStreamSource(new MediaStream([track.mediaStreamTrack]));audioSource.connect(audioAnalyser);
+status.textContent="Pravee is speaking and listening 💜";
+}catch(e){console.error("Audio playback error:",e);status.textContent="Connected, but audio playback failed: "+e.message}
+});
+room.on(LivekitClient.RoomEvent.TrackUnsubscribed,track=>{
+if(track.kind===LivekitClient.Track.Kind.Audio){
+track.detach().forEach(el=>el.remove());
+if(currentAudio){currentAudio.pause();currentAudio.remove();currentAudio=null}
+if(audioSource){audioSource.disconnect();audioSource=null}
+audioAnalyser=null;audioData=null;speaking=false;mouthOpen=0;
+}
+});
+await room.connect(credentials.url,credentials.token);
+await room.startAudio();
+await room.localParticipant.setMicrophoneEnabled(true);
+button.textContent="Disconnect Voice";
+status.textContent="Connected! Speak to Pravee 🎙️";
+$("subtitleText").textContent="I'm listening! Talk to me 💜";
+toast("Pravee connected successfully! 💜");
+}catch(error){
+console.error("PRAVEE CONNECTION ERROR:",error);
+status.textContent="Connection failed: "+error.message;
+$("subtitleText").textContent=error.message;
+button.textContent="🎙️ Connect Voice";toast(error.message);
+if(room){try{await room.disconnect()}catch(e){console.warn(e)}}
+room=null;
+}finally{button.disabled=false}
+}
+async function disconnectPravee(){
+try{
+if(room){await room.disconnect();room=null}
+if(currentAudio){currentAudio.pause();currentAudio.remove();currentAudio=null}
+if(audioSource){audioSource.disconnect();audioSource=null}
+if(audioContext){await audioContext.close();audioContext=null}
+audioAnalyser=null;audioData=null;speaking=false;mouthOpen=0;
+}catch(e){console.error(e)}
+$("connectBtn").textContent="🎙️ Connect Voice";
+$("connectionStatus").textContent="Disconnected from voice assistant";
+$("mo").setAttribute("d","M184 225 Q200 244 216 225");
+$("mo").setAttribute("fill","none");
+}
+function createParticles(){
+const container=$("particles"),symbols=["✦","✧","✨","💜","·"];
+for(let i=0;i<25;i++){
+const p=document.createElement("span");p.className="particle";
+p.textContent=symbols[Math.floor(Math.random()*symbols.length)];
+p.style.left=Math.random()*100+"vw";p.style.animationDuration=(8+Math.random()*14)+"s";
+p.style.animationDelay=(-Math.random()*15)+"s";p.style.fontSize=(10+Math.random()*17)+"px";
+p.style.color=["#f0abfc","#c084fc","#67e8f9"][i%3];container.appendChild(p);
+}
+}
+function frame(ms){
+let volume=0;
+if(audioAnalyser&&audioData){
+audioAnalyser.getByteTimeDomainData(audioData);let sum=0;
+for(let i=0;i<audioData.length;i++){const v=(audioData[i]-128)/128;sum+=v*v}
+volume=Math.sqrt(sum/audioData.length);
+}
+const targetOpen=volume>.012?Math.min(28,volume*350):0;
+mouthOpen+=(targetOpen-mouthOpen)*.35;speaking=mouthOpen>2;
+const mouth=$("mo");
+if(mouth){
+if(speaking){mouth.setAttribute("d",`M184 225 Q200 ${225+mouthOpen} 216 225`);mouth.setAttribute("fill","#a33b67");mouth.setAttribute("stroke","#a33b67");mouth.setAttribute("stroke-width","4")}
+else{mouth.setAttribute("d","M184 225 Q200 244 216 225");mouth.setAttribute("fill","none");mouth.setAttribute("stroke","#a33b67")}
+}
+if(state==="idle"&&!speaking){
+const blink=Math.sin(ms/3000)>.995;
+$("e1").setAttribute("ry",blink?2:13);$("e2").setAttribute("ry",blink?2:13);
+}
+requestAnimationFrame(frame);
+}
+function init(){
+createParticles();buildThemes();buildDress();buildPersonalities();buildAvatars();
+try{
+unlocked=JSON.parse(localStorage.getItem("praveeBadges")||"[]");
+applyTheme(localStorage.getItem("praveeTheme")||"anime",false);
+renderAvatar(localStorage.getItem("praveeAvatar")||"anime",false);
+}catch(e){applyTheme("anime",false);renderAvatar("anime",false)}
+updateAchievements();requestAnimationFrame(frame);
+}
+init();
+</script>
+</body>
+</html>
